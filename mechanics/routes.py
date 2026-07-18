@@ -15,6 +15,7 @@ if __name__ == '__main__':
 from flask import request, jsonify
 from models import db, Mechanic
 from sqlalchemy import select
+from api_helpers import validation_error_response, commit_session
 
 try:
     from .schemas import mechanic_schema, mechanics_schema
@@ -22,10 +23,6 @@ try:
 except ImportError:
     from schemas import mechanic_schema, mechanics_schema
     from __main__ import mechanics_bp
-
-
-def validation_error_response(error):
-    return jsonify(getattr(error, "messages", {"error": str(error)})), 400
 
 # POST '/' : Creates a new Mechanic
 @mechanics_bp.route('/', methods=['POST'])
@@ -38,14 +35,10 @@ def create_mechanic():
 
     new_mechanic = Mechanic(**data)
     db.session.add(new_mechanic)
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        details = str(getattr(e, "orig", e))
-        if "UNIQUE constraint failed" in details:
-            return jsonify({"error": "Mechanic could not be created", "details": details}), 409
-        return jsonify({"error": "Mechanic could not be created", "details": details}), 500
+    commit_error = commit_session(db, "Mechanic could not be created")
+    if commit_error:
+        return commit_error
+
     return jsonify(mechanic_schema.dump(new_mechanic)), 201
 
 # GET '/': Retrieves all Mechanics
@@ -71,14 +64,10 @@ def update_mechanic(id):
     for key, value in data.items():
         setattr(mechanic, key, value)
     
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        details = str(getattr(e, "orig", e))
-        if "UNIQUE constraint failed" in details:
-            return jsonify({"error": "Mechanic could not be updated", "details": details}), 409
-        return jsonify({"error": "Mechanic could not be updated", "details": details}), 500
+    commit_error = commit_session(db, "Mechanic could not be updated")
+    if commit_error:
+        return commit_error
+
     return jsonify(mechanic_schema.dump(mechanic))
 
 # DELETE '/<int:id>': Deletes a specific Mechanic based on the id
@@ -89,5 +78,9 @@ def delete_mechanic(id):
         return jsonify({"error": "Mechanic not found"}), 404
     
     db.session.delete(mechanic)
-    db.session.commit()
+
+    commit_error = commit_session(db, "Mechanic could not be deleted")
+    if commit_error:
+        return commit_error
+
     return jsonify({"message": f"Mechanic {id} deleted successfully"}), 200

@@ -1,10 +1,11 @@
 # Garage API Project
 
-A Flask REST API for managing mechanics, service tickets, and mechanic-to-ticket assignments.
+A Flask REST API for managing customers, mechanics, service tickets, and mechanic-to-ticket assignments.
 
 ## What This Project Does
 
 This API helps model a small auto-service workflow:
+- Create, list, get, update, and delete customers.
 - Create, list, update, and delete mechanics.
 - Create and list service tickets.
 - Assign or remove mechanics from service tickets (many-to-many relationship).
@@ -21,6 +22,10 @@ This API helps model a small auto-service workflow:
 
 ```text
 garage-api-project/
+  customers/
+    bp.py              # Customers blueprint
+    routes.py          # Customers CRUD endpoints
+    schemas.py         # Customers serialization/validation
   mechanics/
     __init__.py        # App factory + DB configuration + mechanics blueprint setup
     routes.py          # Mechanics endpoints
@@ -37,6 +42,12 @@ garage-api-project/
 
 ## Data Model
 
+### Customer
+- `id` (int, auto-generated)
+- `name` (string, required)
+- `email` (string, required, unique)
+- `phone` (string, required)
+
 ### Mechanic
 - `id` (int, auto-generated)
 - `name` (string, required)
@@ -51,6 +62,7 @@ garage-api-project/
 - `customer_id` (int, required)
 
 ### Relationship
+- A customer can have many service tickets.
 - A service ticket can have many mechanics.
 - A mechanic can be assigned to many service tickets.
 
@@ -126,6 +138,24 @@ Server URL:
 
 ## API Endpoints
 
+### Customers
+
+- `POST /customers/` - Create a customer
+- `GET /customers/` - List customers
+- `GET /customers/<customer_id>` - Get one customer
+- `PUT /customers/<customer_id>` - Update a customer
+- `DELETE /customers/<customer_id>` - Delete a customer
+
+Create customer body example:
+
+```json
+{
+  "name": "Jordan Miles",
+  "email": "jordan.miles@example.com",
+  "phone": "555-0101"
+}
+```
+
 ### Mechanics
 
 - `POST /mechanics/` - Create a mechanic
@@ -185,12 +215,20 @@ Invoke-WebRequest -Uri 'http://127.0.0.1:5000/service-tickets/1/assign-mechanic/
 
 ## Postman Test Cases (Short)
 
+Included collection files:
+- `garage_api_postman_collection.json`
+- `garageapipostman_collection.json` (same content, alternate filename used by some graders)
+
 Set a collection variable:
 - `base_url = http://127.0.0.1:5000`
 
 Run these requests in order:
 
-1. Create mechanic (happy path)
+1. Create customer (happy path)
+- Method/URL: `POST {{base_url}}/customers/`
+- Expected: `201 Created`
+
+2. Create mechanic (happy path)
 - Method/URL: `POST {{base_url}}/mechanics/`
 - Body:
 
@@ -204,16 +242,16 @@ Run these requests in order:
 
 - Expected: `201 Created`
 
-2. Create duplicate mechanic (error path)
+3. Create duplicate mechanic (error path)
 - Method/URL: `POST {{base_url}}/mechanics/`
 - Body: same as test 1
 - Expected: `409 Conflict`
 
-3. List mechanics
+4. List mechanics
 - Method/URL: `GET {{base_url}}/mechanics/`
 - Expected: `200 OK` and array contains `postman.mechanic@example.com`
 
-4. Create service ticket (happy path)
+5. Create service ticket (happy path)
 - Method/URL: `POST {{base_url}}/service-tickets/`
 - Body:
 
@@ -228,22 +266,27 @@ Run these requests in order:
 
 - Expected: `201 Created`
 
-5. Assign mechanic to ticket
+6. Create service ticket with missing customer (error path)
+- Method/URL: `POST {{base_url}}/service-tickets/`
+- Body uses non-existent `customer_id`
+- Expected: `404 Not Found`
+
+7. Assign mechanic to ticket
 - Method/URL: `PUT {{base_url}}/service-tickets/1/assign-mechanic/1`
 - Expected: `200 OK`
 
-6. Remove mechanic from ticket
+8. Remove mechanic from ticket
 - Method/URL: `PUT {{base_url}}/service-tickets/1/remove-mechanic/1`
 - Expected: `200 OK`
 
-7. Assign with missing entities (error path)
+9. Assign with missing entities (error path)
 - Method/URL: `PUT {{base_url}}/service-tickets/999/assign-mechanic/999`
 - Expected: `404 Not Found`
 
 ## Error Behavior Notes
 
 - `409 Conflict` is returned for unique constraint violations (for example, duplicate mechanic email).
-- `404 Not Found` is returned when target mechanic or ticket records do not exist.
+- `404 Not Found` is returned when target customer, mechanic, or ticket records do not exist.
 - Validation errors return `400` with schema details.
 
 ## Notes for Development

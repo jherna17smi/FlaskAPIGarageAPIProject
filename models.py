@@ -40,10 +40,23 @@ class ServiceTicket(Base):
     vin: Mapped[str] = mapped_column(String(17), nullable=False)
     service_date: Mapped[date] = mapped_column(Date, nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
-    customer_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    customer_id: Mapped[int] = mapped_column(ForeignKey('customers.id'), nullable=False)
 
     # Relationship attribute: allows us to treat ticket.mechanics like a list
     # (Used for appending/removing mechanics in your routes)
     mechanics: Mapped[List['Mechanic']] = relationship(
         secondary=ticket_mechanic, back_populates='tickets'
     )
+
+    customer: Mapped['Customer'] = relationship(back_populates='service_tickets')
+
+
+class Customer(Base):
+    __tablename__ = 'customers'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(360), nullable=False, unique=True)
+    phone: Mapped[str] = mapped_column(String(30), nullable=False)
+
+    service_tickets: Mapped[List['ServiceTicket']] = relationship(back_populates='customer')

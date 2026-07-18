@@ -111,6 +111,9 @@ def create_app():
     from service_tickets.routes import service_tickets_bp
     app.register_blueprint(service_tickets_bp, url_prefix='/service-tickets')
 
+    from customers.routes import customers_bp
+    app.register_blueprint(customers_bp, url_prefix='/customers')
+
     # Create the database tables if they don't exist
     with app.app_context():
         db.create_all()
