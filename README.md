@@ -294,3 +294,11 @@ Run these requests in order:
 - Database tables are auto-created on app startup (`db.create_all()`).
 - Primary keys (`id`) are output-only in schema definitions.
 - Running `python run.py` is preferred over launching route files directly.
+
+## Resubmission Notes
+
+- Added the missing customer blueprint and full CRUD routes.
+- Completed the Postman collection with customer, mechanic, and service-ticket requests.
+- Included both successful and error test scenarios in the Postman collection.
+- Reduced repeated route logic by moving shared validation and commit handling into helper functions.
+- Verified the collection JSON files and confirmed the registered routes respond successfully.
